@@ -181,6 +181,11 @@ pip install pytest pytest-asyncio respx httpx
 pytest tests/ -v
 ```
 
+## Scalability
+The application entertains the following aspects in terms of scalability -
+1. **Separation of Concerns** The code is modular allowing each component to scale independently. For example, you can update the scoring logic or API client without affecting the FastAPI app.
+2. **Asynchronous I/O** HTTPX is used for asynchronous I/O for API requests. Using async/await allows multiple requests to GitHub to be made concurrently, threby improving throughput and reducing the latency compared to sync calls.
+3. **Pagination Support** The API endpoint supports page and page-size parameters allowing the data to be fetched in chunks.
 
 ## Some Nice to Knows 
 1. GitHub API rate limits is applicable for unauthenticated requests. Using a personal access token increases this limit. This can be easily done by setting the access token as environment variable as one of the options -
@@ -202,3 +207,13 @@ if GITHUB_TOKEN:
  - Stars
  - Forks
  - Last pushed timestamp
+4. **Important limitation** The GitHub Search API only returns the first 1,000 results per query. That means -
+ - per_page can be at most 100
+ - page can be at most 10 when per_page=100
+ - Requests beyond this (for example, page=11&per_page=100) will return **HTTP 422 Unprocessable Entity**
+GitHub does this to keep search performant and to discourage full-dataset crawling. This also means that -
+ - Your popularity score is only computed for the repositories returned by GitHub
+ - Repositories beyond the 1000th result (for a given query) are never fetched and therefore never scored
+ - As a result, the ranking is not guaranteed to include every GitHub repository, only the top repositories within the API’s first 1,000 results
+
+**To handle** this, one can split the query into smaller buckets such as date ranges (created:2025-08-01..2025-08-31). But the key idea would be to reduce each individual query so that it always returns fewer than 1000 results, then fetch all of those smaller result sets and combine them. It is difficult to predict the date range that returns less than 1000 results in the API response. Even the date range of 1 day (for exmaple: 2024-09-01..2024-09-02) gives more than 1000 results.

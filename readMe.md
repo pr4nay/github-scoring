@@ -164,6 +164,12 @@ GET http://127.0.0.1:8000/repositories?language=Python&created_after=2025-01-01&
   ...
 ```
 
+FastAPI automatically provides interactive docs at -
+```
+http://127.0.0.1:8000/docs
+```
+You can also test your endpoint there with a nice GUI and see example responses.
+
 
 ## Caching
 1. In-memory caching is implemented with a simple dictionary
